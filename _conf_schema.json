@@ -1,4 +1,28 @@
 {
+  "report_name_cn": {
+    "description": "日报中文名称",
+    "type": "string",
+    "hint": "显示在日报头部的标题，例如：真寻日报",
+    "default": "真寻日报"
+  },
+  "report_name_en": {
+    "description": "日报英文名称",
+    "type": "string",
+    "hint": "显示在中文标题下方的英文副标题",
+    "default": "MAHIRO NEWS"
+  },
+  "character_name": {
+    "description": "日报角色名称",
+    "type": "string",
+    "hint": "用于 AI 问候语中的角色口吻，例如：真寻",
+    "default": "真寻"
+  },
+  "character_image": {
+    "description": "日报角色图片路径",
+    "type": "string",
+    "hint": "支持绝对路径或相对于插件目录的路径，留空则使用默认图片",
+    "default": ""
+  },
   "api_token": {
     "description": "ALAPI Token (用于节假日、今日一言、早报API)",
     "type": "string",

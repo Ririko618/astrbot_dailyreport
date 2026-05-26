@@ -1,7 +1,7 @@
-﻿name: astrbot_plugin_zhenxunribao
-display_name: 真寻日报
-desc: 这是一个从 nonebot-plugin-zxreport 移植到 AstrBot 的真寻日报插件。插件会每日为你汇总最新的资讯内容，包含今日新番、B站热点、世界新闻、IT资讯、摸鱼日历和今日一言等内容。
-version: 1.2.1
+﻿name: astrbot_dailyreport
+display_name: 日报插件
+desc: 可自定义名称与形象的日报插件。每日汇总最新资讯，包含今日新番、B站热点、世界新闻、IT资讯、摸鱼日历和今日一言等内容。支持通过配置修改日报名称、角色形象和角色名。
+version: 1.3.0
 author: "Huahuatgc"
 repo: https://github.com/luminacry/astrbot_plugin_zhenxunribao
 

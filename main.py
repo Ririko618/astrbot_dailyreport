@@ -23,8 +23,8 @@ from .api.ithome_rss import ITHomeRSS
 from .api.zaobao_api import ZaobaoAPI
 
 
-@register("astrbot_plugin_zhenxunribao", "Huahuatgc", "小真寻记者为你献上今日报道！", "1.2.0", "https://github.com/Huahuatgc/astrbot_plugin_zhenxunribao")
-class ZhenxunReportPlugin(Star):
+@register("astrbot_dailyreport", "Huahuatgc", "每日资讯一览无余！", "1.3.0", "https://github.com/Huahuatgc/astrbot_plugin_zhenxunribao")
+class DailyReportPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
         self.config = config
@@ -55,7 +55,7 @@ class ZhenxunReportPlugin(Star):
             asyncio.create_task(self._delayed_start_scheduler())
             logger.info("定时推送任务正在初始化...")
 
-        logger.info("真寻日报插件已加载")
+        logger.info("日报插件已加载")
 
     async def _delayed_start_scheduler(self):
         """延迟启动定时推送调度器"""
@@ -159,6 +159,9 @@ class ZhenxunReportPlugin(Star):
             "moyu_list": moyu_list or [],
             "world_news": world_news or [],
             "it_news": it_news or [],
+            "report_name_cn": self.config.get("report_name_cn", "真寻日报"),
+            "report_name_en": self.config.get("report_name_en", "MAHIRO NEWS"),
+            "character_image": self._resolve_character_image(),
         }
 
         logger.info(
@@ -234,6 +237,20 @@ html, body {
                 logger.warning(f"获取数据时出错 (索引 {i}): {result}")
 
         return anime_list, bili_hotwords, hitokoto_data, moyu_list, world_news, it_news
+
+    def _resolve_character_image(self) -> str:
+        """根据配置解析角色图片，返回 base64 data URI"""
+        default_path = os.path.join(self.plugin_dir, "res", "image", "1.no-bg.png")
+        custom_path = self.config.get("character_image", "")
+        if custom_path:
+            if not os.path.isabs(custom_path):
+                custom_path = os.path.join(self.plugin_dir, custom_path)
+            if os.path.exists(custom_path):
+                b64 = self._file_to_base64(custom_path)
+                if b64:
+                    return b64
+            logger.warning(f"自定义角色图片不存在: {custom_path}，使用默认图片")
+        return self._file_to_base64(default_path) or ""
 
     def _file_to_base64(self, file_path: str) -> str | None:
         try:
@@ -511,7 +528,7 @@ html, body {
         try:
             import json
             # 使用标准数据目录，避免写入插件源码目录
-            data_dir = StarTools.get_data_dir("astrbot_plugin_zhenxunribao")
+            data_dir = StarTools.get_data_dir("astrbot_dailyreport")
             mapping_file = os.path.join(data_dir, "group_mapping.json")
             if os.path.exists(mapping_file):
                 with open(mapping_file, 'r', encoding='utf-8') as f:
@@ -526,7 +543,7 @@ html, body {
         try:
             import json
             # 使用标准数据目录，避免写入插件源码目录
-            data_dir = StarTools.get_data_dir("astrbot_plugin_zhenxunribao")
+            data_dir = StarTools.get_data_dir("astrbot_dailyreport")
             mapping_file = os.path.join(data_dir, "group_mapping.json")
             with open(mapping_file, 'w', encoding='utf-8') as f:
                 json.dump(self.group_umo_mapping, f, ensure_ascii=False, indent=2)
@@ -594,7 +611,7 @@ html, body {
             prompt = (
                 f"{', '.join(prompt_parts)}。"
                 f"请生成一句简短（15字以内）、温馨且富有创意的日报推送问候语。"
-                f"要求：1. 结合时间或节日 2. 亲切自然 3. 带上真寻的口吻 4. 只返回问候语文本，不要其他内容"
+                f"要求：1. 结合时间或节日 2. 亲切自然 3. 带上{self.config.get('character_name', '真寻')}的口吻 4. 只返回问候语文本，不要其他内容"
             )
             
             # 尝试获取 LLM 提供商
@@ -632,7 +649,8 @@ html, body {
             
         except Exception as e:
             logger.warning(f"生成问候语出错: {e}")
-            return "📰 真寻日报来啦~\n"
+            report_name = self.config.get("report_name_cn", "真寻日报")
+        return f"📰 {report_name}来啦~\n"
 
     def _get_default_greeting(self, hour: int, moyu_list: list) -> str:
         """获取默认问候语（无 AI 时使用）"""
@@ -739,7 +757,7 @@ html, body {
             return False
 
     async def terminate(self):
-        logger.info("真寻日报插件正在卸载...")
+        logger.info("日报插件正在卸载...")
         # 取消定时推送任务
         if self.push_task and not self.push_task.done():
             self.push_task.cancel()
