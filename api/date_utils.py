@@ -17,10 +17,13 @@ WEEKDAYS_CN = {
 }
 
 
-def get_current_date_info() -> Dict[str, str]:
+def get_current_date_info(tz=None) -> Dict[str, str]:
     """
     获取当前日期信息
-    
+
+    Args:
+        tz: 可选时区对象 (zoneinfo.ZoneInfo)
+
     Returns:
         {
             'week_cn': '星期一',
@@ -28,7 +31,7 @@ def get_current_date_info() -> Dict[str, str]:
             'cn_date_str': '腊月初五'
         }
     """
-    now = datetime.now()
+    now = datetime.now(tz)
     
     # 星期
     week_cn = WEEKDAYS_CN[now.weekday()]

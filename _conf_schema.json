@@ -10,7 +10,7 @@
     "type": "string",
     "options": [
       "洛天依",
-      "真寻"
+      "绪山真寻"
     ],
     "hint": "启动时自动扫描 res/role/ 下的文件夹。也可通过下方「导入新角色」上传新角色",
     "default": "洛天依"
@@ -26,6 +26,43 @@
       "orange"
     ],
     "default": "天依蓝"
+  },
+  "timezone": {
+    "description": "时区",
+    "type": "string",
+    "options": [
+      "Pacific/Auckland",
+      "Australia/Sydney",
+      "Asia/Tokyo",
+      "Asia/Shanghai",
+      "Asia/Bangkok",
+      "Asia/Kolkata",
+      "Asia/Riyadh",
+      "Europe/Moscow",
+      "Europe/Paris",
+      "Europe/London",
+      "America/Sao_Paulo",
+      "America/New_York",
+      "America/Los_Angeles",
+      "Pacific/Honolulu"
+    ],
+    "labels": [
+      "UTC+12 奥克兰",
+      "UTC+10 悉尼",
+      "UTC+9 东京",
+      "UTC+8 北京",
+      "UTC+7 曼谷",
+      "UTC+5:30 印度",
+      "UTC+3 利雅得",
+      "UTC+3 莫斯科",
+      "UTC+1 巴黎",
+      "UTC+0 伦敦",
+      "UTC-3 圣保罗",
+      "UTC-5 纽约",
+      "UTC-8 洛杉矶",
+      "UTC-10 夏威夷"
+    ],
+    "default": "Asia/Shanghai"
   },
   "character_upload": {
     "description": "导入新角色",

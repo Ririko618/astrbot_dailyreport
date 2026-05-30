@@ -4,6 +4,7 @@ import os
 import re
 import tempfile
 from datetime import datetime, timedelta, time
+from zoneinfo import ZoneInfo
 from urllib.request import pathname2url
 
 import aiohttp
@@ -92,6 +93,14 @@ class DailyReportPlugin(Star):
         self.template_path = os.path.join(plugin_dir, "daily_news.html")
         self.plugin_dir = plugin_dir
 
+        # 时区
+        tz_name = config.get("timezone", "Asia/Shanghai")
+        try:
+            self.tz = ZoneInfo(tz_name)
+        except Exception:
+            logger.warning(f"无效时区 '{tz_name}'，回退到 Asia/Shanghai")
+            self.tz = ZoneInfo("Asia/Shanghai")
+
         # 扫描可用角色
         self._process_character_uploads()
         self.available_characters = self._scan_characters()
@@ -104,9 +113,11 @@ class DailyReportPlugin(Star):
 
         api_token = config.get("api_token", "")
         self.bgm_api = BGMAPI(session=self.http_session)
+        self.bgm_api.set_timezone(self.tz)
         self.bilibili_api = BilibiliAPI(session=self.http_session)
         self.poem_api = PoemAPI(token=api_token, session=self.http_session)
         self.holiday_api = HolidayAPI(token=api_token, session=self.http_session)
+        self.holiday_api.set_timezone(self.tz)
         self.ithome_rss = ITHomeRSS(session=self.http_session)
         self.zaobao_api = ZaobaoAPI(token=api_token, session=self.http_session)
 
@@ -247,6 +258,10 @@ class DailyReportPlugin(Star):
         except Exception as e:
             logger.warning(f"更新角色选项失败: {e}")
 
+    def _now(self) -> datetime:
+        """获取配置时区的当前时间"""
+        return datetime.now(self.tz)
+
     @filter.command("日报")
     async def daily_news(self, event: AstrMessageEvent):
         """生成日报"""
@@ -298,7 +313,7 @@ class DailyReportPlugin(Star):
         max_hotword_count = self.config.get("max_hotword_count", 4)
         max_holiday_count = self.config.get("max_holiday_count", 3)
 
-        date_info = get_current_date_info()
+        date_info = get_current_date_info(self.tz)
 
         anime_list, bili_hotwords, poem_data, moyu_list, world_news, it_news = (
             await self._fetch_all_data(
@@ -633,7 +648,7 @@ html, body {
                     )
                     push_time = time(8, 0)
 
-                now = datetime.now()
+                now = self._now()
                 next_push = datetime.combine(now.date(), push_time)
 
                 if next_push <= now:
@@ -774,7 +789,7 @@ html, body {
             from datetime import datetime
             now = datetime.now()
             hour = now.hour
-            date_info = get_current_date_info()
+            date_info = get_current_date_info(self.tz)
             
             # 获取节假日信息
             moyu_list = []

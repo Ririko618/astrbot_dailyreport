@@ -26,7 +26,7 @@ class HolidayAPI(BaseAPI):
         self.token = token
         self.url = "https://v3.alapi.cn/api/holiday"
         self.headers = {"Content-Type": "application/json"}
-        self.year = year or datetime.now().year
+        self.year = year or self._now().year
     
     async def get_holidays_async(self) -> Optional[Dict]:
         """

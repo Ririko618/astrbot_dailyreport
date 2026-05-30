@@ -3,7 +3,6 @@ BGM (Bangumi) API 处理模块
 用于获取今日新番数据，供日报模板使用
 """
 import aiohttp
-from datetime import datetime
 from typing import List, Dict, Optional
 
 from astrbot.api import logger
@@ -74,7 +73,7 @@ class BGMAPI(BaseAPI):
             return self._get_default_anime()
 
         try:
-            today_weekday = datetime.now().weekday() + 1
+            today_weekday = self._now().weekday() + 1
             logger.info(f"今日星期ID: {today_weekday}, API 返回 {len(api_data)} 天的数据")
 
             anime_list = []

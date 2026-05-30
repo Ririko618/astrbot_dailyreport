@@ -39,3 +39,12 @@ class BaseAPI:
         """设置新的 session（用于 session 重置）"""
         self._session = session
         self._own_session = False
+
+    def set_timezone(self, tz):
+        """设置时区"""
+        self._tz = tz
+
+    def _now(self):
+        """获取配置时区的当前时间"""
+        from datetime import datetime
+        return datetime.now(getattr(self, '_tz', None))
