@@ -1,30 +1,40 @@
 {
   "report_name_cn": {
-    "description": "日报中文名称",
+    "description": "日报名称",
     "type": "string",
-    "hint": "显示在日报头部的标题，例如：真寻日报",
-    "default": "真寻日报"
+    "hint": "显示在日报头部的标题",
+    "default": "天依日报"
   },
-  "report_name_en": {
-    "description": "日报英文名称",
+  "character": {
+    "description": "日报角色",
     "type": "string",
-    "hint": "显示在中文标题下方的英文副标题",
-    "default": "MAHIRO NEWS"
+    "options": [
+      "洛天依",
+      "真寻"
+    ],
+    "hint": "启动时自动扫描 res/role/ 下的文件夹。也可通过下方「导入新角色」上传新角色",
+    "default": "洛天依"
   },
-  "character_name": {
-    "description": "日报角色名称",
+  "theme": {
+    "description": "日报主题颜色",
     "type": "string",
-    "hint": "用于 AI 问候语中的角色口吻，例如：真寻",
-    "default": "真寻"
+    "options": [
+      "天依蓝",
+      "pink",
+      "purple",
+      "初音绿",
+      "orange"
+    ],
+    "default": "天依蓝"
   },
-  "character_image": {
-    "description": "日报角色图片路径",
-    "type": "string",
-    "hint": "支持绝对路径或相对于插件目录的路径，留空则使用默认图片",
-    "default": ""
+  "character_upload": {
+    "description": "导入新角色",
+    "type": "file",
+    "hint": "上传 1 个 MD 人格文件 + 若干 PNG 角色图片。MD 文件名即为角色名，所有文件归入同一角色文件夹。如 洛天依.md + 图1.png + 图2.png → res/role/洛天依/",
+    "default": []
   },
   "api_token": {
-    "description": "ALAPI Token (用于节假日、今日一言、早报API)",
+    "description": "ALAPI Token (用于节假日、每日古诗词、早报API)",
     "type": "string",
     "hint": "在 https://www.alapi.cn/ 注册获取Token",
     "obvious_hint": true,
@@ -81,7 +91,7 @@
   "enable_ai_greeting": {
     "description": "是否启用 AI 生成个性化问候语",
     "type": "bool",
-    "hint": "启用后会调用 LLM 生成创意问候语，需要配置好大模型服务。关闭则使用预设的问候语",
+    "hint": "启用后 /日报 命令和定时推送都会调用 LLM 生成个性化问候语。关闭则使用预设问候语",
     "default": false
   }
 }

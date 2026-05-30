@@ -8,7 +8,7 @@
 body {
   margin: 0;
   padding: 0;
-  background: #e8aebb;
+  background: var(--wrapper-bg);
   -webkit-font-smoothing: subpixel-antialiased;
   text-rendering: optimizeLegibility;
   font-family: var(--font-body);
@@ -19,19 +19,21 @@ body {
 :root {
   --font-body: "Noto Sans SC", "HarmonyOS Sans SC", "Microsoft YaHei UI", sans-serif;
   --font-title-en: "Noto Sans SC Black", "Noto Sans SC", "Microsoft YaHei UI", sans-serif;
-  --pink-bg: #e8aebb;
+  --wrapper-bg: #add8f0;
   --panel-bg: #ece7eb;
-  --panel-border: #ee97ae;
-  --panel-border-deep: #ea8aa3;
+  --panel-border: #8abee8;
+  --panel-border-deep: #7aade0;
   --panel-tag-bg: #fbf9fa;
-  --title-pink: #f39db4;
-  --title-shadow: #de839d;
+  --title-main: #9dcdf5;
+  --title-shadow: #6ea8dd;
   --title-white: #fffafc;
   --text-main: #252630;
-  --text-soft: #9f7687;
-  --text-accent: #ff8ca7;
+  --text-soft: #6d8fa8;
+  --text-accent: #66ccff;
   --badge-hot: #ff6868;
   --badge-warm: #9c5529;
+  --date-card-bg: #dde8f2;
+  --date-week-bg: #d2e2f0;
 }
 
 @font-face {
@@ -82,7 +84,7 @@ body {
 .wrapper {
   width: 578px;
   box-sizing: border-box;
-  background: var(--pink-bg);
+  background: var(--wrapper-bg);
   padding: 16px;
 }
 
@@ -95,13 +97,13 @@ body {
 
 .header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
 }
 
 .header-figure {
-  width: 102px;
-  flex: 0 0 102px;
+  width: 120px;
+  flex: 0 0 120px;
   padding-top: 2px;
 }
 
@@ -114,7 +116,6 @@ body {
 .header-main {
   flex: 1;
   min-width: 0;
-  padding-top: 8px;
 }
 
 .title-cn {
@@ -123,31 +124,18 @@ body {
   font-size: 66px;
   line-height: 0.95;
   letter-spacing: 0.5px;
-  color: var(--title-pink);
+  color: var(--title-main);
   -webkit-text-stroke: 2px var(--title-white);
   text-shadow: 5px 3px 0 var(--title-shadow);
-}
-
-.title-en {
-  margin: 8px 0 0 7px;
-  font-family: var(--font-title-en);
-  font-weight: 900;
-  font-size: 24px;
-  line-height: 1;
-  letter-spacing: 0.5px;
-  color: var(--title-pink);
-  -webkit-text-stroke: 1px var(--title-white);
-  text-shadow: 2px 2px 0 var(--title-shadow);
 }
 
 .date-card {
   width: 120px;
   flex: 0 0 120px;
-  margin-top: 18px;
   border: 2px solid var(--panel-border);
   border-radius: 14px;
   overflow: hidden;
-  background: #f0dde3;
+  background: var(--date-card-bg);
 }
 
 .date-week {
@@ -160,7 +148,7 @@ body {
   font-size: 50px;
   line-height: 1;
   color: var(--panel-border);
-  background: #e8d9de;
+  background: var(--date-week-bg);
 }
 
 .date-date {
@@ -181,7 +169,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #fffafc;
+  background: var(--title-white);
   color: var(--panel-border-deep);
   font-family: var(--font-body);
   font-weight: 700;
@@ -232,9 +220,7 @@ body {
 }
 
 .moyu-panel,
-.bili-panel {
-  min-height: 248px;
-}
+.bili-panel {}
 
 .moyu-list {
   display: flex;
@@ -316,10 +302,9 @@ body {
 }
 
 .anime-grid {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  column-gap: 10px;
-  row-gap: 14px;
+  display: flex;
+  justify-content: space-evenly;
+  gap: 10px;
 }
 
 .anime-card {
@@ -333,6 +318,7 @@ body {
   object-fit: cover;
   border-radius: 4px;
   margin: 0 auto;
+  background: var(--wrapper-bg);
 }
 
 .anime-text {
@@ -404,6 +390,7 @@ body {
 }
 
     </style>
+    {{ theme_css | safe }}
 </head>
 
 <body>
@@ -415,7 +402,6 @@ body {
                 </div>
                 <div class="header-main">
                     <p class="title-cn">{{ report_name_cn }}</p>
-                    <p class="title-en">{{ report_name_en }}</p>
                 </div>
                 <div class="date-card">
                     <div class="date-week">{{ date_info.week_cn[-1] if date_info.week_cn else '' }}</div>
@@ -458,7 +444,7 @@ body {
                 <div class="anime-grid">
                     {% for anime in anime_list %}
                     <div class="anime-card">
-                        <img src="{{ anime.image }}" class="anime-img" alt="{{ anime.title }}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'84\' height=\'126\'%3E%3Crect fill=\'%23e5aabe\' width=\'84\' height=\'126\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'white\' font-size=\'12\'%3E图片%3C/text%3E%3C/svg%3E'">
+                        <img src="{{ anime.image }}" class="anime-img" alt="{{ anime.title }}" onerror="this.style.display='none'">
                         <p class="anime-text">{{ anime.title }}</p>
                     </div>
                     {% endfor %}
@@ -484,10 +470,10 @@ body {
             </div>
 
             <div class="panel section-panel quote-panel">
-                <div class="panel-tag"><img src="./res/icon/hitokoto.png" alt="今日一言" onerror="this.style.display='none'">今日一言</div>
+                <div class="panel-tag"><img src="./res/icon/hitokoto.png" alt="古诗词" onerror="this.style.display='none'">每日古诗词</div>
                 <div class="quote-box">
-                    <p class="quote-text">“ {{ hitokoto_data.hitokoto }} ”</p>
-                    <span class="quote-from">—— {{ hitokoto_data.from }}</span>
+                    <p class="quote-text">“ {{ poem_data.content }} ”</p>
+                    <span class="quote-from">—— {{ poem_data.from }}</span>
                 </div>
             </div>
     </div>

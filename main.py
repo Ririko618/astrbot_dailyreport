@@ -17,14 +17,73 @@ from astrbot.api.star import Context, Star, register, StarTools
 from .api.bgm_api import BGMAPI
 from .api.bilibili_api import BilibiliAPI
 from .api.date_utils import get_current_date_info
-from .api.hitokoto_api import HitokotoAPI
+from .api.poem_api import PoemAPI
 from .api.holiday_api import HolidayAPI
 from .api.ithome_rss import ITHomeRSS
 from .api.zaobao_api import ZaobaoAPI
 
 
-@register("astrbot_dailyreport", "Huahuatgc", "每日资讯一览无余！", "1.3.0", "https://github.com/Huahuatgc/astrbot_plugin_zhenxunribao")
+@register("astrbot_dailyreport", "Ririko618", "每日资讯一览无余！", "1.0.0", "https://github.com/Ririko618/astrbot_dailyreport")
 class DailyReportPlugin(Star):
+
+    THEMES = {
+        "pink": {
+            "--wrapper-bg": "#e8aebb",
+            "--panel-border": "#ee97ae",
+            "--panel-border-deep": "#ea8aa3",
+            "--title-main": "#f39db4",
+            "--title-shadow": "#de839d",
+            "--text-accent": "#ff8ca7",
+            "--text-soft": "#9f7687",
+            "--date-card-bg": "#f0dde3",
+            "--date-week-bg": "#e8d9de",
+        },
+        "天依蓝": {
+            "--wrapper-bg": "#add8f0",
+            "--panel-border": "#8abee8",
+            "--panel-border-deep": "#7aade0",
+            "--title-main": "#9dcdf5",
+            "--title-shadow": "#6ea8dd",
+            "--text-accent": "#66ccff",
+            "--text-soft": "#6d8fa8",
+            "--date-card-bg": "#dde8f2",
+            "--date-week-bg": "#d2e2f0",
+        },
+        "purple": {
+            "--wrapper-bg": "#c8aee8",
+            "--panel-border": "#bb97ee",
+            "--panel-border-deep": "#ae8aea",
+            "--title-main": "#cdb4f3",
+            "--title-shadow": "#9e83de",
+            "--text-accent": "#b28cff",
+            "--text-soft": "#87769f",
+            "--date-card-bg": "#e3ddf0",
+            "--date-week-bg": "#e0d9e8",
+        },
+        "初音绿": {
+            "--wrapper-bg": "#b5e8e0",
+            "--panel-border": "#8ad5ce",
+            "--panel-border-deep": "#78c8c0",
+            "--title-main": "#a0e5de",
+            "--title-shadow": "#70c8be",
+            "--text-accent": "#39c5bb",
+            "--text-soft": "#5a9a95",
+            "--date-card-bg": "#daf0ec",
+            "--date-week-bg": "#cfe8e2",
+        },
+        "orange": {
+            "--wrapper-bg": "#e8c4ae",
+            "--panel-border": "#e0aa97",
+            "--panel-border-deep": "#d99e8a",
+            "--title-main": "#f3c8b4",
+            "--title-shadow": "#de9a83",
+            "--text-accent": "#ffa78c",
+            "--text-soft": "#9f8476",
+            "--date-card-bg": "#f0e3dd",
+            "--date-week-bg": "#e8dfd9",
+        },
+    }
+
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
         self.config = config
@@ -33,13 +92,20 @@ class DailyReportPlugin(Star):
         self.template_path = os.path.join(plugin_dir, "daily_news.html")
         self.plugin_dir = plugin_dir
 
+        # 扫描可用角色
+        self._process_character_uploads()
+        self.available_characters = self._scan_characters()
+        self._update_character_options(self.available_characters)
+        self.character = self._validate_character(config.get("character", "洛天依"))
+        logger.info(f"可用角色: {self.available_characters}，当前角色: {self.character}")
+
         # 创建共享的 aiohttp ClientSession，供所有 API 类复用
         self.http_session = aiohttp.ClientSession()
 
         api_token = config.get("api_token", "")
         self.bgm_api = BGMAPI(session=self.http_session)
         self.bilibili_api = BilibiliAPI(session=self.http_session)
-        self.hitokoto_api = HitokotoAPI(token=api_token, session=self.http_session)
+        self.poem_api = PoemAPI(token=api_token, session=self.http_session)
         self.holiday_api = HolidayAPI(token=api_token, session=self.http_session)
         self.ithome_rss = ITHomeRSS(session=self.http_session)
         self.zaobao_api = ZaobaoAPI(token=api_token, session=self.http_session)
@@ -86,10 +152,100 @@ class DailyReportPlugin(Star):
         """重新初始化 API 客户端的 session"""
         self.bgm_api.set_session(self.http_session)
         self.bilibili_api.set_session(self.http_session)
-        self.hitokoto_api.set_session(self.http_session)
+        self.poem_api.set_session(self.http_session)
         self.holiday_api.set_session(self.http_session)
         self.ithome_rss.set_session(self.http_session)
         self.zaobao_api.set_session(self.http_session)
+
+    def _process_character_uploads(self):
+        """处理 WebUI 上传的角色文件：复制到 res/role/ 后清空上传列表，确保跨设备可移植"""
+        import shutil
+        uploads = self.config.get("character_upload", [])
+        if not uploads:
+            return
+        astrbot_root = os.path.abspath(os.path.join(self.plugin_dir, "..", "..", ".."))
+        # 上传文件存储在 data/plugin_data/astrbot_dailyreport/files/ 下
+        upload_base = os.path.join(astrbot_root, "data", "plugin_data", "astrbot_dailyreport")
+        role_base = os.path.join(self.plugin_dir, "res", "role")
+        md_file = None
+        for f in uploads:
+            abs_path = os.path.join(upload_base, f) if not os.path.isabs(f) else f
+            if os.path.isfile(abs_path) and f.lower().endswith(".md"):
+                md_file = abs_path
+                break
+        if not md_file:
+            logger.warning(f"未找到 MD 人格文件（已尝试 {len(uploads)} 个文件），跳过角色导入")
+            return
+        char_name = os.path.splitext(os.path.basename(md_file))[0]
+        dest_dir = os.path.join(role_base, char_name)
+        os.makedirs(dest_dir, exist_ok=True)
+        copied = 0
+        updated = 0
+        for f in uploads:
+            abs_path = os.path.join(upload_base, f) if not os.path.isabs(f) else f
+            if not os.path.isfile(abs_path):
+                continue
+            dst = os.path.join(dest_dir, os.path.basename(abs_path))
+            is_md = f.lower().endswith(".md")
+            if is_md:
+                # MD 文件：已存在则覆盖更新
+                if os.path.exists(dst):
+                    shutil.copy2(abs_path, dst)
+                    updated += 1
+                else:
+                    shutil.copy2(abs_path, dst)
+                    copied += 1
+            else:
+                # PNG 文件：不存在才新增，不覆盖同名文件
+                if not os.path.exists(dst):
+                    shutil.copy2(abs_path, dst)
+                    copied += 1
+        if copied or updated:
+            parts = []
+            if copied: parts.append(f"新增 {copied} 个")
+            if updated: parts.append(f"更新 {updated} 个")
+            logger.info(f"已导入角色「{char_name}」({', '.join(parts)}文件) → res/role/{char_name}/")
+            # 清空上传列表，文件已持久化到插件目录，换设备也不影响
+            self.config["character_upload"] = []
+            try:
+                self.config.save_config()
+            except Exception as e:
+                logger.warning(f"清空上传列表失败: {e}")
+
+    def _scan_characters(self) -> list:
+        """扫描 res/role/ 下的所有角色文件夹"""
+        role_dir = os.path.join(self.plugin_dir, "res", "role")
+        if not os.path.isdir(role_dir):
+            logger.warning(f"角色目录不存在: {role_dir}")
+            return ["洛天依"]
+        characters = [
+            d for d in os.listdir(role_dir)
+            if os.path.isdir(os.path.join(role_dir, d))
+        ]
+        return characters if characters else ["洛天依"]
+
+    def _validate_character(self, configured: str) -> str:
+        """校验配置的角色是否存在，不存在则回退到第一个可用角色"""
+        if configured in self.available_characters:
+            return configured
+        fallback = self.available_characters[0]
+        logger.warning(f"配置的角色 '{configured}' 不存在，回退到 '{fallback}'")
+        return fallback
+
+    def _update_character_options(self, characters: list):
+        """将扫描到的角色列表写入 _conf_schema.json，更新下拉选项"""
+        import json
+        schema_path = os.path.join(self.plugin_dir, "_conf_schema.json")
+        try:
+            with open(schema_path, "r", encoding="utf-8") as f:
+                schema = json.load(f)
+            if schema.get("character", {}).get("options") != characters:
+                schema["character"]["options"] = characters
+                with open(schema_path, "w", encoding="utf-8") as f:
+                    json.dump(schema, f, ensure_ascii=False, indent=2)
+                logger.info(f"已更新角色选项: {characters}")
+        except Exception as e:
+            logger.warning(f"更新角色选项失败: {e}")
 
     @filter.command("日报")
     async def daily_news(self, event: AstrMessageEvent):
@@ -107,7 +263,9 @@ class DailyReportPlugin(Star):
         
         image_path = None
         try:
+            greeting = await self._generate_greeting_text()
             image_path = await self._generate_daily_image()
+            yield event.plain_result(greeting)
             yield event.image_result(image_path)
         except Exception as e:
             logger.error(f"生成日报时出错: {e}", exc_info=True)
@@ -142,7 +300,7 @@ class DailyReportPlugin(Star):
 
         date_info = get_current_date_info()
 
-        anime_list, bili_hotwords, hitokoto_data, moyu_list, world_news, it_news = (
+        anime_list, bili_hotwords, poem_data, moyu_list, world_news, it_news = (
             await self._fetch_all_data(
                 max_anime_count=max_anime_count,
                 max_news_count=max_news_count,
@@ -155,13 +313,13 @@ class DailyReportPlugin(Star):
             "date_info": date_info,
             "anime_list": anime_list or [],
             "bili_hotwords": bili_hotwords or [],
-            "hitokoto_data": hitokoto_data or {"hitokoto": "暂无", "from": "未知"},
+            "poem_data": poem_data or {"content": "暂无", "from": "未知"},
             "moyu_list": moyu_list or [],
             "world_news": world_news or [],
             "it_news": it_news or [],
-            "report_name_cn": self.config.get("report_name_cn", "真寻日报"),
-            "report_name_en": self.config.get("report_name_en", "MAHIRO NEWS"),
+            "report_name_cn": self.config.get("report_name_cn", "天依日报"),
             "character_image": self._resolve_character_image(),
+            "theme_css": self._build_theme_css(),
         }
 
         logger.info(
@@ -207,7 +365,7 @@ html, body {
         results = await asyncio.gather(
             self.bgm_api.get_today_anime_async(max_count=max_anime_count),
             self.bilibili_api.get_hotwords_async(max_count=max_hotword_count),
-            self.hitokoto_api.get_hitokoto_async(),
+            self.poem_api.get_poem_async(),
             self.holiday_api.get_moyu_list_async(max_count=max_holiday_count),
             self.zaobao_api.get_world_news_async(max_count=max_news_count),
             self.ithome_rss.get_it_news_async(max_count=max_news_count),
@@ -215,42 +373,71 @@ html, body {
         )
 
         anime_list = results[0] if not isinstance(results[0], Exception) else []
+        if isinstance(results[0], Exception):
+            logger.warning(f"番剧 API 异常: {results[0]}")
         bili_hotwords = results[1] if not isinstance(results[1], Exception) else []
-        hitokoto_data = (
+        poem_data = (
             results[2]
             if not isinstance(results[2], Exception)
-            else {"hitokoto": "暂无", "from": "未知"}
+            else {"content": "暂无", "from": "未知"}
         )
         moyu_list = results[3] if not isinstance(results[3], Exception) else []
         world_news = results[4] if not isinstance(results[4], Exception) else []
         it_news = results[5] if not isinstance(results[5], Exception) else []
 
-        if isinstance(hitokoto_data, dict):
-            from_value = hitokoto_data.get("from", "未知")
+        if isinstance(poem_data, dict):
+            from_value = poem_data.get("from", "未知")
             if not from_value or from_value.strip() == "" or from_value.strip() == "网络":
-                hitokoto_data["from"] = "佚名"
+                poem_data["from"] = "佚名"
             else:
-                hitokoto_data["from"] = from_value.strip()
+                poem_data["from"] = from_value.strip()
 
         for i, result in enumerate(results):
             if isinstance(result, Exception):
                 logger.warning(f"获取数据时出错 (索引 {i}): {result}")
 
-        return anime_list, bili_hotwords, hitokoto_data, moyu_list, world_news, it_news
+        return anime_list, bili_hotwords, poem_data, moyu_list, world_news, it_news
 
     def _resolve_character_image(self) -> str:
-        """根据配置解析角色图片，返回 base64 data URI"""
-        default_path = os.path.join(self.plugin_dir, "res", "image", "1.no-bg.png")
-        custom_path = self.config.get("character_image", "")
-        if custom_path:
-            if not os.path.isabs(custom_path):
-                custom_path = os.path.join(self.plugin_dir, custom_path)
-            if os.path.exists(custom_path):
-                b64 = self._file_to_base64(custom_path)
-                if b64:
-                    return b64
-            logger.warning(f"自定义角色图片不存在: {custom_path}，使用默认图片")
-        return self._file_to_base64(default_path) or ""
+        """从 res/role/{character}/ 随机选择一张 PNG 图片作为角色形象"""
+        import random
+        role_dir = os.path.join(self.plugin_dir, "res", "role", self.character)
+        if not os.path.isdir(role_dir):
+            logger.warning(f"角色目录不存在: {role_dir}")
+            return ""
+        png_files = [
+            f for f in os.listdir(role_dir)
+            if f.lower().endswith(".png")
+        ]
+        if not png_files:
+            logger.warning(f"角色目录下无 PNG 图片: {role_dir}")
+            return ""
+        chosen = random.choice(png_files)
+        logger.debug(f"随机选择角色图片: {chosen}")
+        return self._file_to_base64(os.path.join(role_dir, chosen)) or ""
+
+    def _load_character_personality(self) -> str:
+        """加载角色人格描述文件（res/role/{角色名}/*.md）"""
+        character = self.character
+        role_dir = os.path.join(self.plugin_dir, "res", "role", character)
+        if not os.path.isdir(role_dir):
+            return ""
+        for f in os.listdir(role_dir):
+            if f.endswith(".md"):
+                path = os.path.join(role_dir, f)
+                try:
+                    with open(path, "r", encoding="utf-8") as fp:
+                        return fp.read().strip()
+                except Exception as e:
+                    logger.warning(f"读取角色人格文件失败: {e}")
+        return ""
+
+    def _build_theme_css(self) -> str:
+        """根据 theme 配置生成 CSS 变量覆盖样式"""
+        theme_name = self.config.get("theme", "pink")
+        theme_vars = self.THEMES.get(theme_name, self.THEMES["pink"])
+        css_vars = ";\n  ".join(f"{k}: {v}" for k, v in theme_vars.items())
+        return f"<style>\n:root {{\n  {css_vars};\n}}\n</style>"
 
     def _file_to_base64(self, file_path: str) -> str | None:
         try:
@@ -355,8 +542,16 @@ html, body {
                     page = await context.new_page()
 
                     file_url = f"file://{pathname2url(temp_html_path)}"
-                    await page.goto(file_url, wait_until="networkidle")
-                    await page.wait_for_timeout(2000)
+                    await page.goto(file_url, wait_until="domcontentloaded")
+                    # 等待所有图片加载完成（或失败），Bangumi CDN 较慢，给 15 秒
+                    try:
+                        await page.wait_for_function(
+                            '() => Array.from(document.images).every(img => img.complete)',
+                            timeout=15000,
+                        )
+                    except Exception:
+                        logger.warning("等待图片加载超时，继续截图")
+                    await page.wait_for_timeout(1000)
 
                     wrapper = await page.query_selector(".wrapper")
                     if not wrapper:
@@ -608,10 +803,19 @@ html, body {
             if date_info.get('cn_date_str') and date_info.get('cn_date_str') != '农历未知':
                 prompt_parts.append(f"农历{date_info['cn_date_str']}")
             
+            # 加载角色人格描述
+            character = self.character
+            personality = self._load_character_personality()
+            personality_block = (
+                f"你是{character}，以下是你的角色设定：\n"
+                f"{personality}\n\n"
+            ) if personality else ""
+
             prompt = (
                 f"{', '.join(prompt_parts)}。"
+                f"{personality_block}"
                 f"请生成一句简短（15字以内）、温馨且富有创意的日报推送问候语。"
-                f"要求：1. 结合时间或节日 2. 亲切自然 3. 带上{self.config.get('character_name', '真寻')}的口吻 4. 只返回问候语文本，不要其他内容"
+                f"要求：1. 结合时间或节日 2. 亲切自然 3. 以角色口吻说话 4. 只返回问候语文本，不要其他内容"
             )
             
             # 尝试获取 LLM 提供商
@@ -649,7 +853,7 @@ html, body {
             
         except Exception as e:
             logger.warning(f"生成问候语出错: {e}")
-            report_name = self.config.get("report_name_cn", "真寻日报")
+            report_name = self.config.get("report_name_cn", "天依日报")
         return f"📰 {report_name}来啦~\n"
 
     def _get_default_greeting(self, hour: int, moyu_list: list) -> str:
