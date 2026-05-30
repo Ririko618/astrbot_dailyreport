@@ -24,11 +24,11 @@ from .api.ithome_rss import ITHomeRSS
 from .api.zaobao_api import ZaobaoAPI
 
 
-@register("astrbot_dailyreport", "Ririko618", "每日资讯一览无余！", "1.0.0", "https://github.com/Ririko618/astrbot_dailyreport")
+@register("astrbot_dailyreport", "Ririko618", "锦依卫专属定制日报！", "1.0.1", "https://github.com/Ririko618/astrbot_dailyreport")
 class DailyReportPlugin(Star):
 
     THEMES = {
-        "pink": {
+        "樱花粉": {
             "--wrapper-bg": "#e8aebb",
             "--panel-border": "#ee97ae",
             "--panel-border-deep": "#ea8aa3",
@@ -50,7 +50,7 @@ class DailyReportPlugin(Star):
             "--date-card-bg": "#dde8f2",
             "--date-week-bg": "#d2e2f0",
         },
-        "purple": {
+        "典雅紫": {
             "--wrapper-bg": "#c8aee8",
             "--panel-border": "#bb97ee",
             "--panel-border-deep": "#ae8aea",
@@ -72,7 +72,7 @@ class DailyReportPlugin(Star):
             "--date-card-bg": "#daf0ec",
             "--date-week-bg": "#cfe8e2",
         },
-        "orange": {
+        "暖阳橙": {
             "--wrapper-bg": "#e8c4ae",
             "--panel-border": "#e0aa97",
             "--panel-border-deep": "#d99e8a",
