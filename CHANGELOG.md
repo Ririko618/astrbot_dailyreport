@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 1.0.3 - 2026-06-02
+
+### Added
+- 番剧 API 三层兜底：Bangumi 竞速 → Jikan + AniList 中文反查 → 硬编码
+- Jikan API 独立模块（`api/jikan_api.py`），通过 AniList GraphQL 反查日文汉字标题
+
+### Changed
+- 番剧模块从单源改为多级回退架构
+
+---
+
 ## 1.0.2 - 2026-06-02
 
 ### Added

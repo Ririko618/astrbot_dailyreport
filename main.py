@@ -24,7 +24,7 @@ from .api.ithome_rss import ITHomeRSS
 from .api.zaobao_api import ZaobaoAPI
 
 
-@register("astrbot_dailyreport", "Ririko618", "锦依卫专属定制日报！", "1.0.2", "https://github.com/Ririko618/astrbot_plugin_dailyreport")
+@register("astrbot_dailyreport", "Ririko618", "锦依卫专属定制日报！", "1.0.3", "https://github.com/Ririko618/astrbot_plugin_dailyreport")
 class DailyReportPlugin(Star):
 
     THEMES = {
