@@ -24,7 +24,7 @@ from .api.ithome_rss import ITHomeRSS
 from .api.zaobao_api import ZaobaoAPI
 
 
-@register("astrbot_dailyreport", "Ririko618", "锦依卫专属定制日报！", "1.0.1", "https://github.com/Ririko618/astrbot_dailyreport")
+@register("astrbot_dailyreport", "Ririko618", "锦依卫专属定制日报！", "1.0.2", "https://github.com/Ririko618/astrbot_dailyreport")
 class DailyReportPlugin(Star):
 
     THEMES = {
@@ -449,8 +449,8 @@ html, body {
 
     def _build_theme_css(self) -> str:
         """根据 theme 配置生成 CSS 变量覆盖样式"""
-        theme_name = self.config.get("theme", "pink")
-        theme_vars = self.THEMES.get(theme_name, self.THEMES["pink"])
+        theme_name = self.config.get("theme", "天依蓝")
+        theme_vars = self.THEMES.get(theme_name, self.THEMES["天依蓝"])
         css_vars = ";\n  ".join(f"{k}: {v}" for k, v in theme_vars.items())
         return f"<style>\n:root {{\n  {css_vars};\n}}\n</style>"
 
@@ -649,7 +649,7 @@ html, body {
                     push_time = time(8, 0)
 
                 now = self._now()
-                next_push = datetime.combine(now.date(), push_time)
+                next_push = datetime.combine(now.date(), push_time, self.tz)
 
                 if next_push <= now:
                     next_push += timedelta(days=1)
@@ -786,8 +786,7 @@ html, body {
         """使用 AI 生成个性化的推送文本"""
         try:
             # 获取当前时间和节日信息
-            from datetime import datetime
-            now = datetime.now()
+            now = self._now()
             hour = now.hour
             date_info = get_current_date_info(self.tz)
             

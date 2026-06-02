@@ -1,6 +1,6 @@
 name: astrbot_dailyreport
 display_name: 日报插件
 desc: 自定义日报插件！支持自定义角色形象、5套主题配色、时区选择。每天汇总今日新番、B站热点、世界新闻、IT资讯、摸鱼日历和每日古诗词。默认角色为洛天依，一切皆可配置。
-version: 1.0.1
+version: 1.0.2
 author: "Ririko618"
 repo: https://github.com/Ririko618/astrbot_dailyreport

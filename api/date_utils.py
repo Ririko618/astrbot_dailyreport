@@ -5,6 +5,8 @@
 from datetime import datetime
 from typing import Dict
 
+from astrbot.api import logger
+
 # 星期映射
 WEEKDAYS_CN = {
     0: '星期一',
@@ -39,8 +41,8 @@ def get_current_date_info(tz=None) -> Dict[str, str]:
     # 日期字符串
     date_str = now.strftime('%Y-%m-%d')
     
-    # 农历日期
-    cn_date_str = get_lunar_date(now)
+    # 农历日期（zhdate 不支持时区感知的 datetime，需转为 naive）
+    cn_date_str = get_lunar_date(now.replace(tzinfo=None))
     
     return {
         'week_cn': week_cn,
@@ -80,8 +82,10 @@ def get_lunar_date(date_obj: datetime) -> str:
             day_name = '三十'
         return f"{month_name}月{day_name}"
     except ImportError:
+        logger.warning("zhdate 库未安装，农历显示为未知。请执行: pip install zhdate")
         return "农历未知"
-    except Exception:
+    except Exception as e:
+        logger.warning(f"农历转换失败: {e}")
         return "农历未知"
 
 

@@ -2,6 +2,7 @@
 BGM (Bangumi) API 处理模块
 用于获取今日新番数据，供日报模板使用
 """
+import asyncio
 import aiohttp
 from typing import List, Dict, Optional
 
@@ -20,34 +21,44 @@ class BGMAPI(BaseAPI):
             session: 可选的 aiohttp.ClientSession，如果提供则复用
         """
         super().__init__(session)
-        self.url = "https://api.bgm.tv/calendar"
-        self.fallback_url = "https://bgmapi.anibt.net/calendar"
+        self.url = "https://bgmapi.anibt.net/calendar"
+        self.fallback_url = "https://api.bgm.tv/calendar"
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         }
     
     async def get_calendar_async(self) -> Optional[List]:
-        """
-        异步方式获取 BGM 日历数据。主地址失败时自动尝试备用地址。
+        """同时请求两个 API，按完成顺序取第一个有效结果"""
+        async def _fetch(url):
+            session = await self._get_session()
+            async with session.get(
+                url, headers=self.headers,
+                timeout=aiohttp.ClientTimeout(total=20)
+            ) as resp:
+                resp.raise_for_status()
+                data = await resp.json()
+                if isinstance(data, list) and len(data) > 0:
+                    return data
+                raise ValueError(f"返回数据为空")
+            raise
 
-        Returns:
-            API 返回的原始数据，失败返回 None
-        """
-        for url in (self.url, self.fallback_url):
-            try:
-                session = await self._get_session()
-                async with session.get(
-                    url,
-                    headers=self.headers,
-                    timeout=aiohttp.ClientTimeout(total=10)
-                ) as response:
-                    response.raise_for_status()
-                    logger.info(f"BGM API 请求成功: {url}")
-                    return await response.json()
-            except aiohttp.ClientError as e:
-                logger.warning(f"请求 BGM API 失败 ({url}): {e}")
-            except Exception as e:
-                logger.error(f"获取 BGM 数据失败 ({url}): {e}", exc_info=True)
+        tasks = [
+            asyncio.ensure_future(_fetch(self.url)),
+            asyncio.ensure_future(_fetch(self.fallback_url)),
+        ]
+        pending = set(tasks)
+        while pending:
+            done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+            for t in done:
+                try:
+                    result = t.result()
+                    logger.info("BGM API 竞速成功")
+                    for p in pending:
+                        p.cancel()
+                    return result
+                except Exception as e:
+                    logger.debug(f"BGM API 请求失败: {e}")
+        logger.warning("所有 BGM API 请求均失败")
         return None
     
     def parse_today_anime(self, api_data: Optional[List], max_count: int = 4) -> List[Dict]:
